@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Tutorial Ubuntu Server SMK - SSH, DNS, Apache, Zabbix</title>
+
+  <!-- Favicon -->
+  <link rel="icon" href="favicon.png">
+  <link rel="shortcut icon" href="favicon.png">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+  :root {
+    --maroon: #8a0f2e;
+    --maroon-soft: #b1123f;
+    --dark-bg: #0f0f14;
+    --dark-card: #18181f;
+    --light-text: #ffffff;
+    --soft-text: #e5e7eb;
+    --border-soft: rgba(255,255,255,0.1);
+  }
+
+  body {
+    font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+    background: linear-gradient(135deg, #1a1a22, #0f0f14);
+    color: var(--soft-text);
+    margin: 0;
+    padding: 0;
+    line-height: 1.8;
+  }
+
+  .container {
+    max-width: 950px;
+    margin: auto;
+    padding: 40px 25px;
+  }
+
+  h1 {
+    color: var(--light-text);
+    text-align: center;
+    font-size: 32px;
+    margin-bottom: 10px;
+  }
+
+  h2 {
+    margin-top: 60px;
+    color: var(--light-text);
+    border-left: 6px solid var(--maroon);
+    padding-left: 15px;
+  }
+
+  h3 {
+    color: var(--maroon-soft);
+    margin-top: 30px;
+  }
+
+  p {
+    color: var(--soft-text);
+  }
+
+  code, pre {
+    background: var(--dark-card);
+    color: #f9fafb;
+    padding: 14px 16px;
+    border-radius: 12px;
+    display: block;
+    overflow-x: auto;
+    border: 1px solid var(--border-soft);
+    font-size: 14px;
+  }
+
+  .note {
+    background: linear-gradient(135deg, #8a0f2e, #b1123f);
+    color: white;
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin: 25px 0;
+    box-shadow: 0 10px 25px rgba(138,15,46,0.35);
+  }
+
+  .warn {
+    background: linear-gradient(135deg, #ffffff, #f3f4f6);
+    color: #111827;
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin: 25px 0;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  }
+
+  .warn b {
+    color: var(--maroon);
+  }
+
+  footer {
+    text-align: center;
+    margin-top: 90px;
+    color: #9ca3af;
+    font-size: 14px;
+  }
+
+  /* Scrollbar (opsional, estetik IG vibes) */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #0f0f14;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--maroon);
+    border-radius: 10px;
+  }
+  
+  pre:hover {
+  border-color: var(--maroon);
+  transform: scale(1.01);
+  transition: 0.2s ease;
+}
+
+body {
+  cursor: url("rose-cursor.png") 16 16, auto;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<h1>Tutorial Ubuntu Server
+Paket 1</h1>
+
+<div class="note">
+<b>Spesifikasi Server:</b><br>
+IP Server: <b>192.168.30.10</b><br>
+OS: Ubuntu Server 24.04<br>
+Akses: VirtualBox / SSH
+</div>
+
+<!-- ====================== BAGIAN 1 ====================== -->
+<h2>1️⃣ Penginstalan SSH</h2>
+
+<p>
+SSH digunakan agar kita bisa mengontrol server dari Windows tanpa harus membuka VirtualBox.
+</p>
+
+<h3>Install SSH</h3>
+<pre><code>sudo apt update
+sudo apt install openssh-server -y</code></pre>
+
+<h3>Cek Status SSH</h3>
+<pre><code>systemctl status ssh</code></pre>
+
+<p>Pastikan muncul:</p>
+<pre><code>active (running)</code></pre>
+
+<h3>Login dari Windows</h3>
+<p>Buka <b>Command Prompt (CMD)</b> di Windows, lalu ketik:</p>
+<pre><code>ssh username@192.168.30.10</code></pre>
+
+<div class="note">
+Jika muncul pertanyaan <b>password</b>, masukkan <u>password Ubuntu Server</u>,  
+bukan password database.
+</div>
+
+<!-- ====================== BAGIAN 2 ====================== -->
+<h2>2️⃣ DNS Server (BIND9)</h2>
+
+<p>
+DNS berfungsi menerjemahkan nama domain menjadi IP.
+Di sini kita akan menggunakan domain lokal:
+</p>
+
+<pre><code>lab-smk.xyz</code></pre>
+
+<h3>Install BIND9</h3>
+<pre><code>sudo apt install bind9 -y</code></pre>
+
+<h3>Konfigurasi Zone</h3>
+<pre><code>sudo nano /etc/bind/named.conf.local</code></pre>
+
+Tambahkan:
+<pre><code>zone "lab-smk.xyz" {
+    type master;
+    file "/etc/bind/db.lab-smk";
+};</code></pre>
+
+<h3>Buat File Zone</h3>
+<pre><code>sudo cp /etc/bind/db.local /etc/bind/db.lab-smk
+sudo nano /etc/bind/db.lab-smk</code></pre>
+
+Isi:
+<pre><code>$TTL 300
+@   IN  SOA lab-smk.xyz. root.lab-smk.xyz. (
+        2026012201
+        3600
+        900
+        604800
+        300 )
+
+@       IN  NS  ns.lab-smk.xyz.
+@       IN  A   192.168.30.10
+ns      IN  A   192.168.30.10
+www     IN  A   192.168.30.10
+monitor IN  A   192.168.30.10</code></pre>
+
+<h3>Restart DNS</h3>
+<pre><code>sudo systemctl restart bind9</code></pre>
+
+<h3>Pengetesan (Windows)</h3>
+<p>Atur DNS Windows ke <b>192.168.30.10</b>, lalu:</p>
+<pre><code>ping lab-smk.xyz
+ping www.lab-smk.xyz
+ping monitor.lab-smk.xyz</code></pre>
+
+<!-- ====================== BAGIAN 3 ====================== -->
+<h2>3️⃣ Web Server Apache2</h2>
+
+<h3>Install Apache</h3>
+<pre><code>sudo apt install apache2 -y</code></pre>
+
+<h3>Edit Halaman Web</h3>
+<pre><code>sudo nano /var/www/html/index.html</code></pre>
+
+Isi singkat:
+<pre><code>&lt;h1&gt;Web Server Ubuntu SMK&lt;/h1&gt;
+&lt;p&gt;Apache2 berhasil dijalankan&lt;/p&gt;</code></pre>
+
+<h3>Test di Browser</h3>
+<p>Buka di Windows:</p>
+<pre><code>http://lab-smk.xyz</code></pre>
+
+<!-- ====================== BAGIAN 4 ====================== -->
+<h2>4️⃣ Zabbix Server (Versi Aman & Pasti Jalan)</h2>
+
+<div class="warn">
+Bagian ini memakai <b>cara manual schema database</b> karena pada beberapa sistem
+folder sql bawaan Zabbix <b>tidak tersedia</b>.
+</div>
+
+<h3>Update Sistem</h3>
+<pre><code>sudo apt update && sudo apt upgrade -y</code></pre>
+
+<h3>Install MariaDB</h3>
+<pre><code>sudo apt install mariadb-server -y</code></pre>
+
+<h3>Secure MariaDB</h3>
+<pre><code>sudo mysql_secure_installation</code></pre>
+
+Gunakan jawaban:
+<pre><code>Switch to unix_socket authentication → Y
+Set root password → N
+Remove anonymous users → Y
+Disallow root login remotely → Y
+Remove test database → Y
+Reload privilege tables → Y</code></pre>
+
+<h3>Buat Database Zabbix</h3>
+<pre><code>sudo mysql</code></pre>
+
+<pre><code>CREATE DATABASE zabbix CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
+CREATE USER 'zabbix'@'localhost' IDENTIFIED BY '1';
+GRANT ALL PRIVILEGES ON zabbix.* TO 'zabbix'@'localhost';
+FLUSH PRIVILEGES;
+EXIT;</code></pre>
+
+<div class="note">
+Password database adalah <b>1</b>.  
+Jangan memasukkan password Ubuntu saat diminta password MySQL.
+</div>
+
+<h3>Install Repository Zabbix</h3>
+<pre><code>wget https://repo.zabbix.com/zabbix/7.0/ubuntu/pool/main/z/zabbix-release/zabbix-release_latest_7.0+ubuntu24.04_all.deb
+sudo dpkg -i zabbix-release_latest_7.0+ubuntu24.04_all.deb
+sudo apt update</code></pre>
+
+<h3>Install Zabbix</h3>
+<pre><code>sudo apt install zabbix-server-mysql zabbix-frontend-php zabbix-apache-conf zabbix-agent -y</code></pre>
+
+<h3>Download Schema Manual</h3>
+<pre><code>cd ~
+wget https://cdn.zabbix.com/zabbix/sources/stable/7.0/zabbix-7.0.0.tar.gz
+tar -xzf zabbix-7.0.0.tar.gz
+cd zabbix-7.0.0/database/mysql</code></pre>
+
+<h3>Import Database (URUTAN WAJIB)</h3>
+<pre><code>mysql -u zabbix -p zabbix &lt; schema.sql
+mysql -u zabbix -p zabbix &lt; images.sql
+mysql -u zabbix -p zabbix &lt; data.sql</code></pre>
+
+Password:
+<pre><code>1</code></pre>
+
+<h3>Konfigurasi Zabbix</h3>
+<pre><code>sudo nano /etc/zabbix/zabbix_server.conf</code></pre>
+
+Pastikan:
+<pre><code>DBName=zabbix
+DBUser=zabbix
+DBPassword=1</code></pre>
+
+<h3>Restart Service</h3>
+<pre><code>sudo systemctl restart zabbix-server apache2 zabbix-agent
+sudo systemctl enable zabbix-server apache2 zabbix-agent</code></pre>
+
+<h3>Akses Web</h3>
+<pre><code>http://monitor.lab-smk.xyz/zabbix</code></pre>
+
+Login:
+<pre><code>Admin
+zabbix</code></pre>
+
+<!-- ====================== OPSIONAL ====================== -->
+<h2>⚙️ OPSIONAL: Konfigurasi Netplan (enp0s3)</h2>
+
+<p>
+Bagian ini bersifat <b>opsional</b>, digunakan untuk mengatur IP Address
+pada Ubuntu Server menggunakan <b>Netplan</b>.
+</p>
+
+<div class="note">
+File konfigurasi Netplan biasanya berada di:<br>
+<b>/etc/netplan/50-*.yaml</b><br>
+Contoh: <b>50-cloud-init.yaml</b>
+</div>
+
+<h3>1️⃣ Cek Nama Interface Jaringan</h3>
+<pre><code>ip a</code></pre>
+
+<p>
+Pastikan interface yang digunakan adalah:
+</p>
+<pre><code>enp0s3</code></pre>
+
+<hr>
+
+<h3>2️⃣ DHCP ➜ Static IP</h3>
+<p>
+Digunakan jika server ingin memakai IP <b>tetap</b>.
+</p>
+
+<h4>Edit File Netplan</h4>
+<pre><code>sudo nano /etc/netplan/50-cloud-init.yaml</code></pre>
+
+<h4>Isi Konfigurasi Static</h4>
+<pre><code>network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    enp0s3:
+      dhcp4: no
+      addresses:
+        - 192.168.30.10/24
+      gateway4: 192.168.30.1
+      nameservers:
+        addresses:
+          - 192.168.30.10
+          - 8.8.8.8</code></pre>
+
+<h4>Terapkan Konfigurasi</h4>
+<pre><code>sudo netplan apply</code></pre>
+
+<div class="note">
+Jika koneksi terputus, buka kembali VirtualBox
+untuk memperbaiki konfigurasi.
+</div>
+
+<hr>
+
+<h3>3️⃣ Static IP ➜ DHCP</h3>
+<p>
+Digunakan jika server ingin kembali mendapatkan IP otomatis dari router.
+</p>
+
+<h4>Edit File Netplan</h4>
+<pre><code>sudo nano /etc/netplan/50-cloud-init.yaml</code></pre>
+
+<h4>Isi Konfigurasi DHCP</h4>
+<pre><code>network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    enp0s3:
+      dhcp4: yes</code></pre>
+
+<h4>Terapkan Konfigurasi</h4>
+<pre><code>sudo netplan apply</code></pre>
+
+<hr>
+
+<h3>4️⃣ Cek IP Address</h3>
+<pre><code>ip a</code></pre>
+
+<p>
+Pastikan IP Address sudah sesuai dengan konfigurasi yang dipilih.
+</p>
+
+<h2>🎉 SELESAI</h2>
+<p>Zabbix Server siap digunakan untuk monitoring.</p>
+
+<footer>
+Tutorial Ubuntu Server • Dibuat dengan kasih sayang😘
+</footer>
+
+</div>
+
+
+
+</body>
+</html>
