@@ -147,7 +147,7 @@ SSH digunakan agar kita bisa mengontrol server dari Windows tanpa harus membuka 
 
 <h3>Install SSH</h3>
 <pre><code>sudo apt update
-sudo apt install openssh-server -y</code></pre>
+sudo apt install ssh -y</code></pre>
 
 <h3>Cek Status SSH</h3>
 <pre><code>systemctl status ssh</code></pre>
@@ -172,7 +172,7 @@ DNS berfungsi menerjemahkan nama domain menjadi IP.
 Di sini kita akan menggunakan domain lokal:
 </p>
 
-<pre><code>lab-smk.xyz</code></pre>
+<pre><code>wina.xyz</code></pre>
 
 <h3>Install BIND9</h3>
 <pre><code>sudo apt install bind9 -y</code></pre>
@@ -181,25 +181,25 @@ Di sini kita akan menggunakan domain lokal:
 <pre><code>sudo nano /etc/bind/named.conf.local</code></pre>
 
 Tambahkan:
-<pre><code>zone "lab-smk.xyz" {
+<pre><code>zone "wina.xyz" {
     type master;
-    file "/etc/bind/db.lab-smk";
+    file "/etc/bind/db.wina";
 };</code></pre>
 
 <h3>Buat File Zone</h3>
-<pre><code>sudo cp /etc/bind/db.local /etc/bind/db.lab-smk
-sudo nano /etc/bind/db.lab-smk</code></pre>
+<pre><code>sudo cp /etc/bind/db.local /etc/bind/db.wina
+sudo nano /etc/bind/db.wina</code></pre>
 
 Isi:
 <pre><code>$TTL 300
-@   IN  SOA lab-smk.xyz. root.lab-smk.xyz. (
+@   IN  SOA wina.xyz. root.wina.xyz. (
         2026012201
         3600
         900
         604800
         300 )
 
-@       IN  NS  ns.lab-smk.xyz.
+@       IN  NS  ns.wina.xyz.
 @       IN  A   192.168.30.10
 ns      IN  A   192.168.30.10
 www     IN  A   192.168.30.10
@@ -210,9 +210,9 @@ monitor IN  A   192.168.30.10</code></pre>
 
 <h3>Pengetesan (Windows)</h3>
 <p>Atur DNS Windows ke <b>192.168.30.10</b>, lalu:</p>
-<pre><code>ping lab-smk.xyz
-ping www.lab-smk.xyz
-ping monitor.lab-smk.xyz</code></pre>
+<pre><code>ping wina.xyz
+ping www.wina.xyz
+ping monitor.wina.xyz</code></pre>
 
 <!-- ====================== BAGIAN 3 ====================== -->
 <h2>3️⃣ Web Server Apache2</h2>
@@ -280,7 +280,7 @@ Isi pake ini😁:
 
 <h3>Test di Browser</h3>
 <p>Buka di Windows:</p>
-<pre><code>http://lab-smk.xyz</code></pre>
+<pre><code>http://wina.xyz</code></pre>
 
 <!-- ====================== BAGIAN 4 ====================== -->
 <h2>4️⃣ Zabbix Server (Versi Aman & Pasti Jalan)</h2>
@@ -355,8 +355,10 @@ DBPassword=1</code></pre>
 <pre><code>sudo systemctl restart zabbix-server apache2 zabbix-agent
 sudo systemctl enable zabbix-server apache2 zabbix-agent</code></pre>
 
-<h3>Akses Web</h3>
-<pre><code>http://monitor.lab-smk.xyz/zabbix</code></pre>
+<h3>Akses Web di Chrome</h3>
+<pre><code>http://monitor.wina.xyz/zabbix
+atau
+http://192.168.30.10/zabbix</code></pre>
 
 Login:
 <pre><code>Admin
